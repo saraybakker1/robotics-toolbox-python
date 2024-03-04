@@ -9,6 +9,7 @@ import roboticstoolbox as rtb
 import spatialmath as sm
 import numpy as np
 import qpsolvers as qp
+import copy
 
 # Launch the simulator Swift
 env = swift.Swift()
@@ -109,8 +110,11 @@ def step():
 
         # If there are any parts of the robot within the influence distance
         # to the collision in the scene
+        # if c_Ain is not None and c_bin is not None:
+        #     c_Ain = np.c_[c_Ain, np.zeros((c_Ain.shape[0], 6))]
         if c_Ain is not None and c_bin is not None:
-            c_Ain = np.c_[c_Ain, np.zeros((c_Ain.shape[0], 6))]
+            c_Ain_original = copy.deepcopy(c_Ain)
+            c_Ain = np.c_[c_Ain_original, np.zeros((c_Ain_original.shape[0], 4))]
 
             # Stack the inequality constraints
             Ain = np.r_[Ain, c_Ain]
@@ -124,7 +128,7 @@ def step():
     ub = np.r_[panda.qdlim[:n], 10 * np.ones(6)]
 
     # Solve for the joint velocities dq
-    qd = qp.solve_qp(Q, c, Ain, bin, Aeq, beq, lb=lb, ub=ub)
+    qd = qp.solve_qp(Q, c, Ain, bin, Aeq, beq, lb=lb, ub=ub, solver="clarabel")
 
     # Apply the joint velocities to the Panda
     panda.qd[:n] = qd[:n]
